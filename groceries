@@ -1,0 +1,54 @@
+install.packages("arules")
+library(arules)
+url = 'https://raw.githubusercontent.com/JayRay1987/MLwR/master/Machine%20Learning%20with%20R%20(3rd%20Ed.)/Chapter08/groceries.csv'
+#creates a sparse matrix rather than a dataframe. Sparse Matrix has only 1s and 0s and
+#columns represent an item.
+groceries <- read.transactions(url, sep = ",")
+#9835 rows (transactions) and 169 columns (items)
+#density value shows the proportion of nonzero matrix cells.
+summary(groceries)
+#to look at the first five transactions in the sparse matrix use inspect
+inspect(groceries[1:5])
+#check first three items and their percentage in the entire matrix.
+#sparse matrix columns organised alphabetically.
+itemFrequency(groceries[, 1:3])
+#present some of these frequencies with at least 10 percent support.
+itemFrequencyPlot(groceries, support = 0.1)
+#present the top 10 items.
+itemFrequencyPlot(groceries, topN = 10)
+#image of the matrix
+image(groceries[1:10])
+#randomly sampled image of the sparse matrix
+image(sample(groceries[1:100]))
+#trial and error
+apriori(groceries)
+#try again with a bit more refinement
+groceryrules <- apriori(groceries, parameter = list(support = 0.006, confidence = 0.25, minlen = 2))
+groceryrules
+#463 association rules
+summary(groceryrules)
+#150 rules have 2 items, 297 rules have 3 items and 16 rules have 4 items.
+#lift tells us how much more likely a customer is to buy whole milk relative to the
+#average customer, given that he or she bought a potted plant.
+inspect(groceryrules[1:5])
+#First rule implies that people who buy herbs are nearly 4 times more likely to buy
+#root vegetables than a typical customer.
+inspect(sort(groceryrules, by = "lift")[1:5])
+#subset the groceryrules for those that apply to berries
+berryrules <- subset(groceryrules, items %in% "berries")
+inspect(berryrules)
+#people who buy berries are nearly four times more likely to buy whipped/sour cream.
+#also, those who buy berries are over two times more likely to buy yoghurt.
+#use %pin% for a partial match.
+veggierules <- subset(groceryrules, items %pin% "vegetable")
+inspect(sort(veggierules, by = "lift")[1:5])
+#use %ain% for a complete match
+drinkrules <- subset(groceryrules, items %ain% c("whole milk", "bottled water"))
+inspect(sort(drinkrules, by = "lift")[1:5])
+#those who buy bottled beer and whole milk are nearly three times likely to buy bottled water.
+#saving association rules to a file or data frame
+write(groceryrules, file = "groceryrules.csv", sep = ",", quote = TRUE, row.names = FALSE)
+#convert to data frame
+groceryrules_df <- as(groceryrules, "data.frame")
+#check structure of data frame
+str(groceryrules_df)
